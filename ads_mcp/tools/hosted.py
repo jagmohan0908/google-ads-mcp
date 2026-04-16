@@ -283,7 +283,7 @@ def ads_query_report(
       headers["login-customer-id"] = target_login_id
     resp = httpx.post(
         (
-            "https://googleads.googleapis.com/v19/customers/"
+            "https://googleads.googleapis.com/v22/customers/"
             f"{target_customer_id}/googleAds:searchStream"
         ),
         headers=headers,
