@@ -195,9 +195,38 @@ def _validated_context(
   return config
 
 
+def _resolve_auth(
+    caller_id: str | None,
+    auth_token: str | None,
+) -> tuple[str, str]:
+  """Resolves caller auth from args first, then MCP_DEFAULT_* env vars."""
+  resolved_caller = caller_id or os.getenv("MCP_DEFAULT_CALLER_ID", "")
+  resolved_token = auth_token or os.getenv("MCP_DEFAULT_AUTH_TOKEN", "")
+  if not resolved_caller or not resolved_token:
+    raise ToolError(
+        "caller_id and auth_token are required. "
+        "Pass arguments or set MCP_DEFAULT_CALLER_ID/MCP_DEFAULT_AUTH_TOKEN."
+    )
+  return resolved_caller, resolved_token
+
+
+def _resolve_label(label: str | None) -> str:
+  """Resolves label from args first, then MCP_DEFAULT_LABEL env var."""
+  resolved_label = label or os.getenv("MCP_DEFAULT_LABEL", "")
+  if not resolved_label:
+    raise ToolError(
+        "label is required. Pass argument or set MCP_DEFAULT_LABEL."
+    )
+  return resolved_label
+
+
 @mcp.tool()
-def list_labels(caller_id: str, auth_token: str) -> dict[str, list[str]]:
+def list_labels(
+    caller_id: str | None = None,
+    auth_token: str | None = None,
+) -> dict[str, list[str]]:
   """Lists labels available to the authenticated caller."""
+  caller_id, auth_token = _resolve_auth(caller_id, auth_token)
   tokens = _load_json_env("MCP_AUTH_TOKENS_JSON")
   expected_token = tokens.get(caller_id)
   if not expected_token or expected_token != auth_token:
@@ -213,15 +242,17 @@ def list_labels(caller_id: str, auth_token: str) -> dict[str, list[str]]:
 
 @mcp.tool()
 def ads_query_report(
-    label: str,
     query: str,
-    caller_id: str,
-    auth_token: str,
+    label: str | None = None,
+    caller_id: str | None = None,
+    auth_token: str | None = None,
     customer_id: str | None = None,
     login_customer_id: str | None = None,
 ) -> dict[str, list[dict[str, Any]]]:
   """Runs a read-only Google Ads report query via label routing."""
   tool_name = "ads_query_report"
+  label = _resolve_label(label)
+  caller_id, auth_token = _resolve_auth(caller_id, auth_token)
   try:
     config = _validated_context(
         label=label,
@@ -275,17 +306,19 @@ def ads_query_report(
 
 @mcp.tool()
 def analytics_run_report(
-    label: str,
     metrics: list[str],
     dimensions: list[str],
     start_date: str,
     end_date: str,
-    caller_id: str,
-    auth_token: str,
+    label: str | None = None,
+    caller_id: str | None = None,
+    auth_token: str | None = None,
     property_id: str | None = None,
 ) -> dict[str, Any]:
   """Runs a read-only GA4 report via label routing."""
   tool_name = "analytics_run_report"
+  label = _resolve_label(label)
+  caller_id, auth_token = _resolve_auth(caller_id, auth_token)
   try:
     config = _validated_context(
         label=label,
@@ -328,13 +361,15 @@ def analytics_run_report(
 
 @mcp.tool()
 def youtube_get_channel_stats(
-    label: str,
-    caller_id: str,
-    auth_token: str,
+    label: str | None = None,
+    caller_id: str | None = None,
+    auth_token: str | None = None,
     channel_id: str | None = None,
 ) -> dict[str, Any]:
   """Gets read-only YouTube channel stats via label routing."""
   tool_name = "youtube_get_channel_stats"
+  label = _resolve_label(label)
+  caller_id, auth_token = _resolve_auth(caller_id, auth_token)
   try:
     config = _validated_context(
         label=label,

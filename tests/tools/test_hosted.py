@@ -57,6 +57,14 @@ def test_list_labels(monkeypatch):
   assert output == {"labels": ["acct_ads"]}
 
 
+def test_list_labels_with_default_auth(monkeypatch):
+  _configure_env(monkeypatch)
+  monkeypatch.setenv("MCP_DEFAULT_CALLER_ID", "analyst_1")
+  monkeypatch.setenv("MCP_DEFAULT_AUTH_TOKEN", "token-abc")
+  output = hosted.list_labels()
+  assert output == {"labels": ["acct_ads"]}
+
+
 def test_list_labels_unauthorized(monkeypatch):
   _configure_env(monkeypatch)
   with pytest.raises(ToolError, match="Unauthorized caller"):
@@ -76,3 +84,13 @@ def test_refresh_access_token_cached(monkeypatch):
   config = hosted.get_label_registry()["acct_ads"]
   hosted._TOKEN_CACHE["acct_ads:v1"] = ("cached-token", 9999999999)  # pylint: disable=protected-access
   assert hosted._refresh_access_token(config) == "cached-token"  # pylint: disable=protected-access
+
+
+def test_resolve_auth_requires_args_or_defaults():
+  with pytest.raises(ToolError, match="caller_id and auth_token are required"):
+    hosted._resolve_auth(None, None)  # pylint: disable=protected-access
+
+
+def test_resolve_label_requires_arg_or_default():
+  with pytest.raises(ToolError, match="label is required"):
+    hosted._resolve_label(None)  # pylint: disable=protected-access
