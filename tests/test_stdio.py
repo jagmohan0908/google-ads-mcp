@@ -15,6 +15,7 @@
 """Tests for stdio.py."""
 
 from unittest import mock
+import os
 
 from ads_mcp import stdio
 
@@ -24,7 +25,10 @@ from ads_mcp import stdio
 @mock.patch("ads_mcp.stdio.update_views_yaml", new_callable=mock.Mock)
 def test_main(mock_update_views, mock_api, mock_mcp_server):
   """Tests main function."""
-  with mock.patch("ads_mcp.stdio.asyncio.run"):
+  with (
+      mock.patch("ads_mcp.stdio.asyncio.run"),
+      mock.patch.dict(os.environ, {"MCP_HOSTED_MODE": ""}),
+  ):
     stdio.main()
 
   mock_update_views.assert_called_once()

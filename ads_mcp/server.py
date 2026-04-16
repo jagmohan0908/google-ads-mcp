@@ -51,9 +51,13 @@ def main():
   if not os.getenv("MCP_HOSTED_MODE"):
     api.get_ads_client()  # Check Google Ads credentials
   print("mcp server starting...")
+  host = os.getenv("HOST", "0.0.0.0")
+  port = int(os.getenv("PORT", "8000"))
   mcp_server.run(
       transport="streamable-http",
       show_banner=False,
+      host=host,
+      port=port,
   )  # Initialize and run the server
 
 
