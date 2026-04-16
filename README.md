@@ -116,6 +116,63 @@ uv run -m ads_mcp.server
 
 The server will start and be ready to accept requests.
 
+## Hosted Read-Only Mode (Label Routing)
+
+You can run this MCP as a hosted backend URL and let clients select accounts by
+`label` only, while credentials remain server-side.
+
+### Environment Variables
+
+- `MCP_HOSTED_MODE=true`: Skips legacy local `google-ads.yaml` startup check.
+- `MCP_LABEL_CONFIG_JSON`: Label registry object.
+- `MCP_AUTH_TOKENS_JSON`: Caller auth token map.
+- `MCP_LABEL_RBAC_JSON`: Caller-to-label allowlist map.
+- `MCP_RATE_LIMIT_PER_MIN`: Optional per `caller+label` rate limit.
+
+### Label Registry Shape (`MCP_LABEL_CONFIG_JSON`)
+
+```json
+{
+  "clientA_ads": {
+    "provider": "google_ads",
+    "allowedTools": ["ads_query_report"],
+    "accountContext": { "customer_id": "1234567890" },
+    "credentials": {
+      "client_id": "xxx.apps.googleusercontent.com",
+      "client_secret": "xxx",
+      "refresh_token": "xxx",
+      "developer_token": "xxx",
+      "login_customer_id": "0987654321",
+      "version": "v1"
+    }
+  },
+  "brandX_ga4": {
+    "provider": "ga4",
+    "allowedTools": ["analytics_run_report"],
+    "accountContext": { "property_id": "123456789" },
+    "credentials": {
+      "client_id": "xxx.apps.googleusercontent.com",
+      "client_secret": "xxx",
+      "refresh_token": "xxx",
+      "version": "v3"
+    }
+  }
+}
+```
+
+### Hosted Tools
+
+- `list_labels(caller_id, auth_token)`
+- `ads_query_report(label, query, caller_id, auth_token, customer_id?, login_customer_id?)`
+- `analytics_run_report(label, metrics, dimensions, start_date, end_date, caller_id, auth_token, property_id?)`
+- `youtube_get_channel_stats(label, caller_id, auth_token, channel_id?)`
+
+All tools are read-only and enforce:
+- caller authentication
+- label RBAC authorization
+- provider/tool allowlist checks
+- per-minute rate limits
+
 ## Contributing
 
 We welcome contributions! Please see our [CONTRIBUTING.md](CONTRIBUTING.md) guide for details.
